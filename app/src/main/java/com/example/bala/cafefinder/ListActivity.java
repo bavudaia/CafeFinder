@@ -3,6 +3,7 @@ package com.example.bala.cafefinder;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -19,7 +20,7 @@ public class ListActivity extends Activity {
     private RecyclerView recyclerView;
     private PlaceAdapter placeAdapter;
 
-    public static final String EXTRA_INTENT = "Placelist";
+    public static final String EXTRA_INTENT = "PlaceList";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -30,11 +31,12 @@ public class ListActivity extends Activity {
         recyclerView = (RecyclerView)findViewById(R.id.recycler_view);
         placeAdapter = new PlaceAdapter();
         placeAdapter.setPlaceList(placeList);
+
         placeAdapter.setListener(new PlaceAdapter.OnPlaceClickListener() {
                                      @Override
                                      public void onPlaceClick(MyPlace place) {
                                          Intent intent = new Intent(ListActivity.this,DetailActivity.class);
-                                         intent.putExtra(DetailActivity.DETAIL_EXTRA,place);
+                                         intent.putExtra(DetailActivity.DETAIL_EXTRA,place.getId());
                                          startActivity(intent);
                                      }
                                  });
@@ -43,7 +45,6 @@ public class ListActivity extends Activity {
         RecyclerView.LayoutManager mLayoutManager = new LinearLayoutManager(getApplicationContext());
         recyclerView.setLayoutManager(mLayoutManager);
         recyclerView.setItemAnimator(new DefaultItemAnimator());
-
 
     }
 

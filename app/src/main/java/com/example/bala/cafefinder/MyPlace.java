@@ -3,15 +3,26 @@ package com.example.bala.cafefinder;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import java.io.Serializable;
+
 /**
  * Created by bala on 7/22/16.
  */
-public class MyPlace implements Parcelable{
+public class MyPlace implements Parcelable, Serializable{
+    private String id;
     private String name;
     private double rating;
     private double lat,lng;
-
     public MyPlace(){}
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+
 
     public String getRating() {
         return String.valueOf(rating);
@@ -52,6 +63,7 @@ public class MyPlace implements Parcelable{
 
     @Override
     public void writeToParcel(Parcel parcel, int i) {
+        parcel.writeString(id);
         parcel.writeString(name);
         parcel.writeDouble(rating);
         parcel.writeDouble(lat);
@@ -72,6 +84,7 @@ public class MyPlace implements Parcelable{
 
     private MyPlace(Parcel in)
     {
+        id = in.readString();
         name = in.readString();
         rating = in.readDouble();
         lat = in.readDouble();
@@ -79,5 +92,5 @@ public class MyPlace implements Parcelable{
 
     }
 
-    private String id;
+
 }

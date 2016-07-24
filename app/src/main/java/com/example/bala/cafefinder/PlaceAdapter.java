@@ -25,6 +25,7 @@ public class PlaceAdapter extends RecyclerView.Adapter<PlaceAdapter.PlaceViewHol
     public void setPlaceList(List<MyPlace> placeList) {
         this.placeList = placeList;
     }
+
     public interface OnPlaceClickListener {
         void onPlaceClick(MyPlace place);
     }
@@ -51,6 +52,7 @@ public class PlaceAdapter extends RecyclerView.Adapter<PlaceAdapter.PlaceViewHol
             });
         }
     }
+
     public PlaceAdapter() {}
 
     @Override

@@ -51,6 +51,10 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -62,17 +66,15 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private GoogleMap mMap;
     private PlaceAutocompleteFragment autocompleteFragment;
     public static final String REQ_TAG = "NearbyTag";
-    private StringRequest stringRequest; // Assume this exists.
-    private RequestQueue mRequestQueue;  // Assume this exists.
+    private StringRequest stringRequest;
+    private RequestQueue mRequestQueue;
     private Button nextButton;
-    private List<MyPlace> placeList;
+    private volatile List<MyPlace> placeList;
     public final static int CONNECTION_FAILURE_RESOLUTION_REQUEST = 9000;
     private LocationRequest mLocationRequest;
-    /*
-    private LocationManager locationManager;
-    private LocationListener locationListener;
-    private Context context;
-*/
+    private GoogleApiClient mGoogleApiClient;
+    private static  final String RESPONSE_TAG = "RESPONSE_TAG";
+
     /**
      * Request code for location permission request.
      *
@@ -88,9 +90,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         placeList = new ArrayList<>();
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
-        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
-                .findFragmentById(R.id.map);
-        mapFragment.getMapAsync(this);
+
 
         nextButton = (Button) findViewById(R.id.recycler_view_button);
         nextButton.setOnClickListener(new NextButtonClickListener(this,ListActivity.class,placeList));
@@ -99,15 +99,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 .findFragmentById(R.id.autocomplete_fragment);
         autocompleteFragment.setOnPlaceSelectedListener(this);
 
-        mGoogleApiClient = new GoogleApiClient.Builder(this)
-                .addConnectionCallbacks(this)
-                .addOnConnectionFailedListener(this)
-                .addApi(LocationServices.API)
-                .build();
-        mLocationRequest = LocationRequest.create()
-                .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
-                .setInterval(10 * 1000)        // 10 seconds, in milliseconds
-                .setFastestInterval(1 * 1000); // 1 second, in milliseconds
+
+
+        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
+                .findFragmentById(R.id.map);
+        mapFragment.getMapAsync(this);
+        mapFragment.setRetainInstance(true);
     }
 
 
@@ -123,16 +120,18 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     public void onMapReady(GoogleMap googleMap) {
         try {
-            Log.d(TAG, "Map Ready");
             mMap = googleMap;
-
             mMap.setOnMyLocationButtonClickListener(this);
             mMap.setMyLocationEnabled(true);
 
-            // Add a marker in Sydney and move the camera
+            // Add a marker in san jose and move the camera
+
             LatLng sanJose = new LatLng(37.3299096, -121.9046956);
             mMap.addMarker(new MarkerOptions().position(sanJose).title("Marker in Sydney"));
             mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(sanJose, 13));
+
+            //handleNewLocation(location);
+
         } catch (SecurityException se) {
             Log.d(TAG, se.getMessage());
         }
@@ -208,17 +207,13 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             // Return false so that we don't consume the event and the default behavior still occurs
             // (the camera animates to the user's current position).
 
-        /* Location Manager
-
-            locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
-            */
             location = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
             handleNewLocation(location);
             LatLng myLoc  = new LatLng(location.getLatitude(), location.getLongitude());
             placeList = new ArrayList<>();
             addNearbyCafes(myLoc);
 
+            Log.d("TAG" , "onResponse ");
         } catch (SecurityException se) {
             Log.d(LOC_TAG, se.getMessage());
         }
@@ -253,7 +248,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
         else {
             Log.d(LOC_TAG, location.toString());
-            //handleNewLocation(location);
         }
     }
     private Location location;
@@ -275,11 +269,19 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             Log.d(LOC_TAG, "Location services connection failed with code " + connectionResult.getErrorCode());
         }
     }
-    private GoogleApiClient mGoogleApiClient;
+
     @Override
     protected void onResume() {
         super.onResume();
         //setUpMapIfNeeded();
+        mGoogleApiClient = new GoogleApiClient.Builder(this)
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
+                .addApi(LocationServices.API)
+                .build();
+        mLocationRequest = LocationRequest.create()
+                .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
+                .setInterval(10 * 1000)  ;
         mGoogleApiClient.connect();
     }
 
@@ -307,7 +309,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         MarkerOptions options = new MarkerOptions()
                 .position(latLng)
                 .title("Current")
-                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
+                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN))
                 ;
         mMap.clear();
         mMap.addMarker(options);
@@ -318,7 +320,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private void addNearbyCafes(LatLng selection)
     {
         try{
-            if( mRequestQueue == null)
+            if(mRequestQueue == null)
                 mRequestQueue = Volley.newRequestQueue(this);
             String url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json?location="
                 + selection.latitude + "%2C"
@@ -334,7 +336,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 , new NearbyErrorListener());
         stringRequest.setTag(REQ_TAG);
         mRequestQueue.add(stringRequest);
-    } catch (Exception ex) {
+    }
+        catch (Exception ex) {
         Log.d(TAG, ex.getMessage());
     }
 

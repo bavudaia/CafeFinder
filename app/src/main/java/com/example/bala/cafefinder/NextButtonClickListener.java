@@ -23,7 +23,7 @@ public class NextButtonClickListener implements View.OnClickListener{
     @Override
     public void onClick(View view) {
         Intent intent = new Intent(fromActivity,toActivity);
-        intent.putParcelableArrayListExtra(ListActivity.EXTRA_INTENT,(ArrayList<MyPlace>)placeList);
+        intent.putParcelableArrayListExtra(ListActivity.EXTRA_INTENT,(ArrayList<MyPlace>)NearbyResponseListener.placeList);
         fromActivity.startActivity(intent);
     }
 }
