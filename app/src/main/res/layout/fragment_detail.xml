@@ -13,6 +13,32 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id ="@+id/detail_name"
-        android:text="test"
+        android:text="El Camino Real"
+
         />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id = "@+id/rating"
+        android:text="rating"
+        android:layout_below="@id/detail_name"
+        />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id = "@+id/vicinity"
+        android:layout_below="@id/rating"
+        />
+
+
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/vicinity"
+        android:id = "@+id/image"
+        android:src = "@mipmap/ic_launcher"
+        />
+
 </RelativeLayout>

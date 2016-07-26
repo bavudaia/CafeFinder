@@ -1,11 +1,19 @@
 package com.example.bala.cafefinder;
 
+import android.media.Image;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
+
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.toolbox.ImageRequest;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
 
 import org.w3c.dom.Text;
 
@@ -26,6 +34,10 @@ public class DetailFragment extends Fragment {
     }
 
     private TextView name;
+    private TextView rating;
+    private TextView vicinity;
+    private ImageView imageView;
+    private RequestQueue rq;
     public static final String EXTRA_PLACE_ID = "Extra Place Id";
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -36,9 +48,48 @@ public class DetailFragment extends Fragment {
         }
         name = (TextView)v.findViewById(R.id.detail_name);
         name.setText(place.getName());
+
+        rating = (TextView)v.findViewById(R.id.rating);
+        rating.setText("Rating : "+place.getRating());
+
+        vicinity = (TextView)v.findViewById(R.id.vicinity);
+        vicinity.setText(place.getVicinity());
+
+        imageView = (ImageView)v.findViewById(R.id.image);
+
+        getImage(place);
+
         return v;
     }
 
+    private void getImage(MyPlace place )
+    {
+        List<Photo> photos = place.getPhotos();
+        if(photos == null || photos.size() ==0)
+            return;
+        rq = Volley.newRequestQueue(getContext());
+        String url = "https://maps.googleapis.com/maps/api/place/photo?key="
+                + MyRequest.KEY
+                +"&photoreference="+photos.get(0).getPhoto_reference()
+                +"&maxheight="+PhotoAttr.max_height
+                +"&maxwidth"  + PhotoAttr.max_width
+                ;
+        // Request a string response from the provided URL.
+
+        ImageRequest imageRequest = new ImageRequest(
+                 url
+                , new PhotoResponseListener(imageView)
+                , 0,0,null,new PhotoErrorListener());
+        /*
+        StringRequest stringRequest = new StringRequest(Request.Method.GET
+                , url
+                , new PhotoResponseListener(imageView)
+                , new PhotoErrorListener());
+                */
+        imageRequest.setTag(P_REQ_TAG);
+        rq.add(imageRequest);
+    }
+  private static final String P_REQ_TAG = "Photo Request Tag";
     @Override
     public void onPause()
     {
@@ -59,7 +110,7 @@ public class DetailFragment extends Fragment {
 
     public static DetailFragment newInstance(int  pos)
     {
-        MyPlace place=  NearbyResponseListener.placeList.get(pos);
+        MyPlace place=  Singleton.getInstance().placeList.get(pos);
         DetailFragment detailFragment = new DetailFragment();
         Bundle args = new Bundle();
         args.putSerializable(EXTRA_PLACE_ID,place.getId());

@@ -4,6 +4,7 @@ import android.os.Parcel;
 import android.os.Parcelable;
 
 import java.io.Serializable;
+import java.util.List;
 
 /**
  * Created by bala on 7/22/16.
@@ -13,6 +14,9 @@ public class MyPlace implements Parcelable, Serializable{
     private String name;
     private double rating;
     private double lat,lng;
+    private List<Photo> photos;
+    private String vicinity;
+
     public MyPlace(){}
     public String getId() {
         return id;
@@ -68,6 +72,8 @@ public class MyPlace implements Parcelable, Serializable{
         parcel.writeDouble(rating);
         parcel.writeDouble(lat);
         parcel.writeDouble(lng);
+        parcel.writeTypedList(photos);
+        parcel.writeString(vicinity);
     }
 
 
@@ -89,8 +95,25 @@ public class MyPlace implements Parcelable, Serializable{
         rating = in.readDouble();
         lat = in.readDouble();
         lng = in.readDouble();
-
+        in.readTypedList(photos,Photo.CREATOR);
+        vicinity = in.readString();
     }
 
+    public List<Photo> getPhotos() {
+        return photos;
+    }
+
+    public void setPhotos(List<Photo> photos) {
+        this.photos = photos;
+    }
+
+
+    public String getVicinity() {
+        return vicinity;
+    }
+
+    public void setVicinity(String vicinity) {
+        this.vicinity = vicinity;
+    }
 
 }

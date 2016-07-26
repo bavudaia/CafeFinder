@@ -19,7 +19,7 @@ public class DetailActivity extends FragmentActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
+        Thread.setDefaultUncaughtExceptionHandler(new ExceptionHandler(this));
         mViewPager = new ViewPager(this);
         mViewPager.setId(R.id.viewPager);
         setContentView(mViewPager);
@@ -34,10 +34,10 @@ public class DetailActivity extends FragmentActivity {
         {
             id = savedInstanceState.getString(KEY_INDEX);
         }
-        int size = NearbyResponseListener.placeList.size();
+        int size = Singleton.getInstance().placeList.size();
         for(int i=0;i<size;i++)
         {
-            if(NearbyResponseListener.placeList.get(i).getId().equals(id))
+            if(Singleton.getInstance().placeList.get(i).getId().equals(id))
             {
                 mViewPager.setCurrentItem(i);
                 break;

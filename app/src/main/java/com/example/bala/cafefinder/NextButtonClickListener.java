@@ -13,7 +13,7 @@ import java.util.List;
 public class NextButtonClickListener implements View.OnClickListener{
     private Context fromActivity;
     private Class toActivity;
-    private List<MyPlace> placeList;
+    private static List<MyPlace> placeList;
     public NextButtonClickListener(Context from , Class to, List<MyPlace> list)
     {
         fromActivity=from;
@@ -22,8 +22,10 @@ public class NextButtonClickListener implements View.OnClickListener{
     }
     @Override
     public void onClick(View view) {
-        Intent intent = new Intent(fromActivity,toActivity);
-        intent.putParcelableArrayListExtra(ListActivity.EXTRA_INTENT,(ArrayList<MyPlace>)NearbyResponseListener.placeList);
-        fromActivity.startActivity(intent);
+        if(Singleton.getInstance().placeList!=null && Singleton.getInstance().placeList.size()>0 ) {
+            Intent intent = new Intent(fromActivity, toActivity);
+            intent.putParcelableArrayListExtra(ListActivity.EXTRA_INTENT, (ArrayList<MyPlace>) Singleton.getInstance().placeList);
+            fromActivity.startActivity(intent);
+        }
     }
 }

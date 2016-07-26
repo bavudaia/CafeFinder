@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Map;
 
 public class ListActivity extends Activity {
-    private List<MyPlace> placeList;
+    private static List<MyPlace> placeList;
     private RecyclerView recyclerView;
     private PlaceAdapter placeAdapter;
 
@@ -24,6 +24,7 @@ public class ListActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Thread.setDefaultUncaughtExceptionHandler(new ExceptionHandler(this));
         setContentView(R.layout.activity_list);
 
         populatePlaceList();
@@ -50,7 +51,8 @@ public class ListActivity extends Activity {
 
     public void populatePlaceList()
     {
-        placeList = (List) getIntent().getParcelableArrayListExtra(EXTRA_INTENT);
+        //placeList = (List) getIntent().getParcelableArrayListExtra(EXTRA_INTENT);
+        placeList = Singleton.getInstance().placeList;
         Log.d(MapsActivity.TAG,"SecondList Activity");
         Log.d(MapsActivity.TAG, placeList==null?"null":placeList.toString());
         //placeAdapter.notifyDataSetChanged();

@@ -22,6 +22,6 @@ public class PlaceDetailPagerAdapter extends FragmentStatePagerAdapter{
 
     @Override
     public int getCount() {
-        return NearbyResponseListener.placeList.size();
+        return Singleton.getInstance().placeList.size();
     }
 }

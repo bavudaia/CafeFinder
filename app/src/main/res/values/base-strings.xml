@@ -16,7 +16,7 @@
 -->
 
 <resources>
-    <string name="app_name">PlaceCompleteFragment</string>
+    <string name="app_name">CafeFinder</string>
     <string name="intro_message">
         <![CDATA[
         

@@ -12,6 +12,8 @@ import android.location.LocationManager;
 import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.design.widget.CoordinatorLayout;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
@@ -32,6 +34,7 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.GooglePlayServicesRepairableException;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -51,11 +54,6 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -74,6 +72,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private LocationRequest mLocationRequest;
     private GoogleApiClient mGoogleApiClient;
     private static  final String RESPONSE_TAG = "RESPONSE_TAG";
+    private CoordinatorLayout coordinatorLayout;
 
     /**
      * Request code for location permission request.
@@ -84,14 +83,29 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     public static final String LOC_TAG = "LOC_TAG";
 
     @Override
+    protected  void  onSaveInstanceState(Bundle outState)
+    {
+        super.onSaveInstanceState(outState);
+        outState.putString("Location",location==null?"null":location.toString());
+    }
+    private void checkGooglePlayServices() {
+        GoogleApiAvailability api = GoogleApiAvailability.getInstance();
+        int code = api.isGooglePlayServicesAvailable(this);
+        if(code != ConnectionResult.SUCCESS && api.isUserResolvableError(code))
+                Toast.makeText(this, api.getErrorString(code), Toast.LENGTH_LONG).show();
+    }
+    private Bundle savedData;
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Thread.setDefaultUncaughtExceptionHandler(new ExceptionHandler(this));
+        this.savedData = savedInstanceState;
         setContentView(R.layout.activity_maps);
 
         placeList = new ArrayList<>();
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
 
-
+        coordinatorLayout = (CoordinatorLayout)findViewById(R.id.coordinator_layout);
         nextButton = (Button) findViewById(R.id.recycler_view_button);
         nextButton.setOnClickListener(new NextButtonClickListener(this,ListActivity.class,placeList));
 
@@ -99,12 +113,30 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 .findFragmentById(R.id.autocomplete_fragment);
         autocompleteFragment.setOnPlaceSelectedListener(this);
 
-
-
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
         mapFragment.setRetainInstance(true);
+
+        if(savedInstanceState != null)
+        {
+            String loc = (String)savedInstanceState.getString("Location");
+            if(loc!=null && loc.equals("null"))
+            {
+                final Snackbar snackbar = Snackbar
+                        .make(coordinatorLayout, "Location Services Disabled....", Snackbar.LENGTH_INDEFINITE);
+                snackbar.setAction("RETRY", new View.OnClickListener(){
+
+                    @Override
+                    public void onClick(View view) {
+                        snackbar.dismiss();
+                        onMyLocationButtonClick();
+                    }
+                });
+                snackbar.show();
+
+            }
+        }
     }
 
 
@@ -123,14 +155,25 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             mMap = googleMap;
             mMap.setOnMyLocationButtonClickListener(this);
             mMap.setMyLocationEnabled(true);
-
+/*
+            mGoogleApiClient = new GoogleApiClient.Builder(this)
+                    .addConnectionCallbacks(this)
+                    .addOnConnectionFailedListener(this)
+                    .addApi(LocationServices.API)
+                    .build();
+            mLocationRequest = LocationRequest.create()
+                    .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
+                    .setInterval(10 * 1000)  ;
+            mGoogleApiClient.connect();
+*/
             // Add a marker in san jose and move the camera
+            if(savedData==null) {
+                LatLng sanJose = new LatLng(37.3299096, -121.9046956);
+                mMap.addMarker(new MarkerOptions().position(sanJose).title("Marker in Sydney"));
+                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(sanJose, 13));
+            }
 
-            LatLng sanJose = new LatLng(37.3299096, -121.9046956);
-            mMap.addMarker(new MarkerOptions().position(sanJose).title("Marker in Sydney"));
-            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(sanJose, 13));
-
-            //handleNewLocation(location);
+//            handleNewLocation(location);
 
         } catch (SecurityException se) {
             Log.d(TAG, se.getMessage());
@@ -155,7 +198,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(selection, 13));
 
             addNearbyCafes(selection);
-        } catch (Exception ex) {
+        }
+
+        catch (Exception ex) {
             Log.d(TAG, ex.getMessage());
         }
     }
@@ -209,13 +254,14 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
             location = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
             handleNewLocation(location);
-            LatLng myLoc  = new LatLng(location.getLatitude(), location.getLongitude());
-            placeList = new ArrayList<>();
-            addNearbyCafes(myLoc);
+            if(location!=null) {
+                LatLng myLoc = new LatLng(location.getLatitude(), location.getLongitude());
+                placeList = new ArrayList<>();
+                addNearbyCafes(myLoc);
+            }
 
-            Log.d("TAG" , "onResponse ");
         } catch (SecurityException se) {
-            Log.d(LOC_TAG, se.getMessage());
+            Log.d(LOC_TAG,"Security exception in my location button click");
         }
         return false;
     }
@@ -268,12 +314,18 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         } else {
             Log.d(LOC_TAG, "Location services connection failed with code " + connectionResult.getErrorCode());
         }
+
+    }
+    @Override
+    protected  void onStart()
+    {
+        super.onStart();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        //setUpMapIfNeeded();
+
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this)
@@ -282,6 +334,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         mLocationRequest = LocationRequest.create()
                 .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
                 .setInterval(10 * 1000)  ;
+        checkGooglePlayServices();
         mGoogleApiClient.connect();
     }
 
@@ -300,21 +353,35 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     private void handleNewLocation(Location location) {
-        Log.d(LOC_TAG, location.toString());
+        if(location == null)
+        {
+            final Snackbar snackbar = Snackbar
+                     .make(coordinatorLayout, "Location Services Disabled....", Snackbar.LENGTH_INDEFINITE);
+            snackbar.setAction("RETRY", new View.OnClickListener(){
 
-        double currentLatitude = location.getLatitude();
-        double currentLongitude = location.getLongitude();
-        LatLng latLng = new LatLng(currentLatitude, currentLongitude);
+                @Override
+                public void onClick(View view) {
+                    snackbar.dismiss();
+                    onMyLocationButtonClick();
+                }
+            });
+            snackbar.show();
+        }
+        else {
+            Log.d(LOC_TAG, location.toString());
 
-        MarkerOptions options = new MarkerOptions()
-                .position(latLng)
-                .title("Current")
-                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN))
-                ;
-        mMap.clear();
-        mMap.addMarker(options);
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng,13));
+            double currentLatitude = location.getLatitude();
+            double currentLongitude = location.getLongitude();
+            LatLng latLng = new LatLng(currentLatitude, currentLongitude);
 
+            MarkerOptions options = new MarkerOptions()
+                    .position(latLng)
+                    .title("You Are Here..")
+                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN));
+            mMap.clear();
+            mMap.addMarker(options);
+            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 13));
+        }
     }
 
     private void addNearbyCafes(LatLng selection)
@@ -333,12 +400,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         stringRequest = new StringRequest(Request.Method.GET
                 , url
                 , new NearbyResponseListener<String>(mMap,placeList)
-                , new NearbyErrorListener());
+                , new NearbyErrorListener(coordinatorLayout));
         stringRequest.setTag(REQ_TAG);
         mRequestQueue.add(stringRequest);
     }
         catch (Exception ex) {
-        Log.d(TAG, ex.getMessage());
+        Log.d(TAG,ex.getMessage());
     }
 
 }
